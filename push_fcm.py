@@ -3,7 +3,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import messaging
 from typing import List
-
+import logging
 from fcm_dto import FcmDto
 
 class PushFcm:
@@ -30,8 +30,8 @@ class PushFcm:
                         'key2': 'value2'
                     }
                     
-                    print(f"test title: {fcm.title}")
-                    print(f"test content: {fcm.content}")
+                    logging.info(f"test title: {fcm.title}")
+                    logging.info(f"test content: {fcm.content}")
                     
                     # 메시지 생성
                     message = messaging.Message(
@@ -61,19 +61,19 @@ class PushFcm:
                     
                     # 메시지 전송
                     response = messaging.send(message)
-                    print(f"Successfully sent message: {response}")
+                    logging.info(f"Successfully sent message: {response}")
                     success_count += 1
                     
                 except Exception as e:
-                    print(f"Failed to send message to {fcm.token_id}: {e}")
+                    logging.info(f"Failed to send message to {fcm.token_id}: {e}")
                     fail_count += 1
             
-            print(f"Push completed - Success: {success_count}, Failed: {fail_count}")
+            logging.info(f"Push completed - Success: {success_count}, Failed: {fail_count}")
             return fail_count == 0
 
 
         except Exception as e:
-            print(f"Push error: {e}")
+            logging.info(f"Push error: {e}")
             return False
 
 

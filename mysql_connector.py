@@ -70,6 +70,7 @@ class MySQLConnector:
             logger.error(f"insert/update/delete query fail: {e}")
             self.connection.rollback()
             return 0
+
             
     def test_connection(self) -> bool:
         """connection test"""

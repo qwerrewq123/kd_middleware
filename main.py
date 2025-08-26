@@ -3,7 +3,6 @@ from tkinter import ttk, scrolledtext
 from scheduler import Scheduler
 import os
 import logging
-from datetime import datetime
 
 
 class GuiLogHandler(logging.Handler):
@@ -104,7 +103,7 @@ class DBFCMSchedulerApp:
 
         ttk.Label(db_info_frame, text="MariaDB Connection Info", style='Title.TLabel').pack(pady=(10, 5))
 
-        info_text = "Host: Not Connected | User: N/A | Database: N/A"
+        info_text = "Host: http://kdnavien.iptime.org | User: root | Database: MariaDB"
 
         self.db_info_label = ttk.Label(db_info_frame, text=info_text, style='Info.TLabel')
         self.db_info_label.pack(pady=(0, 10))
@@ -177,23 +176,41 @@ class DBFCMSchedulerApp:
             self.gui_handler.setFormatter(logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s', 
                                                            datefmt='%H:%M:%S'))
         
-        # 각 로거에 핸들러 추가
+        # 로깅 기본 설정 (EXE 환경을 위해)
+        logging.basicConfig(level=logging.INFO)
+        
+        # 각 로거에 핸들러 추가 및 기존 핸들러 제거
         scheduler_logger = logging.getLogger('scheduler')
+        scheduler_logger.handlers.clear()  # 기존 핸들러 모두 제거
         scheduler_logger.addHandler(self.gui_handler)
         scheduler_logger.setLevel(logging.INFO)
+        scheduler_logger.propagate = False  # 상위 로거로 전파 방지
         
         mysql_logger = logging.getLogger('mysql_connector')
+        mysql_logger.handlers.clear()  # 기존 핸들러 모두 제거
         mysql_logger.addHandler(self.gui_handler)
         mysql_logger.setLevel(logging.INFO)
+        mysql_logger.propagate = False  # 상위 로거로 전파 방지
+        
+        # 루트 로거도 GUI로 리다이렉트
+        root_logger = logging.getLogger()
+        root_logger.handlers.clear()
+        root_logger.addHandler(self.gui_handler)
+        root_logger.setLevel(logging.INFO)
         
         self.init_scheduler()
         self.scheduler.start()
-        print('start clicked')
+        
+        # GUI 로그로 직접 출력 테스트
+        logging.info('Start button clicked - Scheduler starting...')
 
     def stop_clicked(self):
         self.start_button.config(state='normal')
         self.stop_button.config(state='disabled')
         self.connection_status.config(text="● Stopped", foreground='#ff0000')
+        
+        # GUI 로그로 직접 출력
+        logging.info('Stop button clicked - Scheduler stopping...')
         
         # 스케줄러 중지
         if self.scheduler:
@@ -206,9 +223,11 @@ class DBFCMSchedulerApp:
             
             mysql_logger = logging.getLogger('mysql_connector')
             mysql_logger.removeHandler(self.gui_handler)
+            
+            root_logger = logging.getLogger()
+            root_logger.removeHandler(self.gui_handler)
         
         self.destroy_scheduler()
-        print('stop clicked')
 
 
 def main():

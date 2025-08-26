@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class Scheduler:
-    def __init__(self, interval: int = 1.5):
+    def __init__(self, interval: int = 5):
 
         with open("config.toml", 'r', encoding='utf-8') as f:
             config = toml.load(f)
@@ -44,16 +44,20 @@ class Scheduler:
         
     def job(self):
         """Job to execute"""
-        result = self.mysql_connector.execute_query(query=self.push_sql.select_query)[0]
-        count = result['count(*)']
+        result = self.mysql_connector.execute_query(query=self.push_sql.select_query)
+        idx_list = [res['idx'] for res in result]
+        count = len(idx_list)
         logger.info(f'count is {count}')
         logger.info(f'interval is {self.interval}')
-        if count :
+
+        if count > 0:
             try:
                 self.mysql_connector.execute_update(query=self.push_sql.fcm_query)
                 rows = self.mysql_connector.execute_query(query=self.push_sql.fcm_select_query)
                 fcm_list = [FcmDto(row['TOKEN'],row['TITLE'],row['CONTENT']) for row in rows]
                 self.push_fcm.push(fcm_list)
+                for idx in idx_list:
+                    self.mysql_connector.execute_update(self.push_sql.alarm_event_update_query, params=(idx,))
             except Exception as e:
                 logger.error(f"Fcm Query Execution Fail: {e}")
                 if self.mysql_connector.connection:
