@@ -59,8 +59,10 @@ class Scheduler:
                 self.mysql_connector.execute_update(query=self.push_sql.fcm_query)
                 rows = self.mysql_connector.execute_query(query=self.push_sql.fcm_select_query)
                 fcm_list = [FcmDto(row['TOKEN'],row['TITLE'],row['CONTENT']) for row in rows]
+                docno_list = [row['DOCNO'] for row in rows]
                 self.push_fcm.push(fcm_list)
-                for idx in idx_list:
+                for docno,idx in zip(docno_list,idx_list):
+                    self.mysql_connector.execute_update(self.push_sql.alarm_fcm_update_query, params=(docno,))
                     self.mysql_connector.execute_update(self.push_sql.alarm_event_update_query, params=(idx,))
             except Exception as e:
                 logger.error(f"Fcm Query Execution Fail: {e}")

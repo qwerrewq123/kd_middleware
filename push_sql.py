@@ -57,7 +57,7 @@ class PushSql:
           AND d.pushyn = 'Y';
         """
         self.fcm_select_query = """
-            select
+        select
         a.*
         from
         (
@@ -68,6 +68,9 @@ class PushSql:
         where b.TOKEN != 'NO_TOKEN' and b.TOKEN is not null and a.TRANSYN = 'N'
         ) a
         where a.FCMYN = 'N'
+        """
+        self.alarm_fcm_update_query = """
+        update simbiz.tb_cm_fcm set transyn = 'Y' where docno = %s
         """
         self.alarm_event_update_query = """
         update simbizlocal.alram_event set push_yn = 'Y' where idx = %s
