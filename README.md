@@ -12,14 +12,14 @@
 - **스케줄러 기반 자동화**: 설정 가능한 주기로 자동 실행 (기본 5초)
 
 
-## 설치
+## install
 
-1. 필요한 패키지 설치:
+1. install package:
 ```bash
 pip install -r requirements.txt
 ```
 
-2. 환경 변수 설정 (`.env` 파일 수정):
+2. set enviroment variable (`config.toml`):
 ```env
 # MariaDB Configuration  
 [database.mariadb]
@@ -30,7 +30,7 @@ username =
 password = 
 ```
 
-## 실행
+## execute
 
 ```bash
 python main.py
@@ -38,7 +38,7 @@ python main.py
 
 
 
-## 프로젝트 구조
+## project
 
 ```
 middleware/
@@ -53,18 +53,3 @@ middleware/
 └── simbizmall-5717f-firebase-adminsdk-45is2-597a4fbefc.json          
 ```
 
-## 모듈 설명
-
-### mysql_connector.py
-### main.py
-### push_fcm.py
-### push_sql.py
-### scheduler.py
-### requirements.txt
-### config.toml
-### simbizmall-5717f-firebase-adminsdk-45is2-597a4fbefc.json
-
-
-## 종료
-
-해당 GUI 프로그램을 끄면 프로그램이 종료됩니다.
