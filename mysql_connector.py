@@ -25,7 +25,8 @@ class MySQLConnector:
                 user=self.username,
                 password=self.password,
                 charset='utf8mb4',
-                cursorclass=pymysql.cursors.DictCursor
+                cursorclass=pymysql.cursors.DictCursor,
+                autocommit=True  # 자동 커밋 활성화로 최신 데이터 읽기 보장
             )
             logger.info(f"MySQL Connect Success: {self.host}:{self.port}/{self.database}")
             return True
@@ -64,11 +65,13 @@ class MySQLConnector:
         try:
             with self.connection.cursor() as cursor:
                 cursor.execute(query, params or ())
-                self.connection.commit()
+                # autocommit=True이므로 명시적 commit 불필요
                 return cursor.rowcount
         except Exception as e:
             logger.error(f"insert/update/delete query fail: {e}")
-            self.connection.rollback()
+            # autocommit 모드에서는 rollback이 필요없지만 안전을 위해 유지
+            if not self.connection.autocommit:
+                self.connection.rollback()
             return 0
 
             

@@ -48,6 +48,10 @@ class Scheduler:
         
     def job(self):
         """Job to execute"""
+        # 매 실행마다 최신 데이터를 확실히 읽기 위해 ping으로 연결 확인
+        if self.mysql_connector.connection:
+            self.mysql_connector.connection.ping(reconnect=True)
+        
         result = self.mysql_connector.execute_query(query=self.push_sql.select_query)
         idx_list = [res['idx'] for res in result]
         count = len(idx_list)
@@ -68,7 +72,7 @@ class Scheduler:
                 logger.error(f"Fcm Query Execution Fail: {e}")
                 if self.mysql_connector.connection:
                     self.mysql_connector.connection.rollback()
-                    logger.info("Transaction Rollback")
+
 
     def run_continuously(self):
         """Schedule in Background"""
