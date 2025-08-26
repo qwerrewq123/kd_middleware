@@ -1,0 +1,11 @@
+[app]
+scheduler_interval = 5
+batch_size = 100
+log_level = "INFO"
+
+[database.mariadb]
+host = "kdnavien.iptime.org"
+port = 3336
+database = "simbiz"
+username = "root"
+password = "tlaqlwm2174"
