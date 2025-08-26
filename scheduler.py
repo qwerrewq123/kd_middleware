@@ -16,7 +16,11 @@ logger = logging.getLogger(__name__)
 
 class Scheduler:
     def __init__(self, interval: int = 5):
-
+        # 로깅 설정을 생성자에서 수행
+        # 루트 로거의 핸들러 확인
+        if not logging.getLogger().handlers:
+            logging.basicConfig(level=logging.INFO)
+            
         with open("config.toml", 'r', encoding='utf-8') as f:
             config = toml.load(f)
             logger.info("Load config.toml file")

@@ -9,15 +9,16 @@ class GuiLogHandler(logging.Handler):
     def __init__(self, text_widget):
         super().__init__()
         self.text_widget = text_widget
-        
+
     def emit(self, record):
         msg = self.format(record)
+
         def append():
             self.text_widget.config(state=tk.NORMAL)
             self.text_widget.insert(tk.END, msg + '\n')
             self.text_widget.see(tk.END)
             self.text_widget.config(state=tk.DISABLED)
-        
+
         # GUI 스레드에서 실행되도록 보장
         self.text_widget.after(0, append)
 
@@ -28,7 +29,7 @@ class DBFCMSchedulerApp:
         self.root.title("KD-Navien Alarm push Service")
         self.root.geometry("800x600")
         self.root.configure(bg='#1a1a1a')
-        self.scheduler : Scheduler = None
+        self.scheduler: Scheduler = None
         self.gui_handler = None
 
         # 아이콘 설정
@@ -44,12 +45,15 @@ class DBFCMSchedulerApp:
         self.root.grid_columnconfigure(0, weight=1)
 
         self.setup_ui()
+
     def init_scheduler(self):
         if self.scheduler is None:
             self.scheduler = Scheduler()
+
     def destroy_scheduler(self):
         if self.scheduler is not None:
             self.scheduler = None
+
     def setup_ui(self):
         style = ttk.Style()
         style.theme_use('clam')
@@ -123,7 +127,7 @@ class DBFCMSchedulerApp:
         log_container.grid_columnconfigure(0, weight=1)
 
         ttk.Label(log_container, text="Status Monitor", style='Title.TLabel').grid(row=0, column=0, pady=(10, 5),
-                                                                                  sticky='w', padx=10)
+                                                                                   sticky='w', padx=10)
 
         self.log_text = scrolledtext.ScrolledText(
             log_container,
@@ -169,38 +173,40 @@ class DBFCMSchedulerApp:
         self.start_button.config(state='disabled')
         self.stop_button.config(state='normal')
         self.connection_status.config(text="● Running", foreground='#00ff00')
-        
+
         # GUI 핸들러 설정
         if self.gui_handler is None:
             self.gui_handler = GuiLogHandler(self.log_text)
-            self.gui_handler.setFormatter(logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s', 
-                                                           datefmt='%H:%M:%S'))
-        
-        # 로깅 기본 설정 (EXE 환경을 위해)
-        logging.basicConfig(level=logging.INFO)
-        
-        # 각 로거에 핸들러 추가 및 기존 핸들러 제거
+            self.gui_handler.setFormatter(logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s',
+                                                            datefmt='%H:%M:%S'))
+
+        # 로깅 기본 설정 (Scheduler 생성 전에 설정)
+        logging.basicConfig(level=logging.INFO, force=True)
+
+        # 루트 로거를 먼저 설정
+        root_logger = logging.getLogger()
+        root_logger.handlers.clear()
+        root_logger.addHandler(self.gui_handler)
+        root_logger.setLevel(logging.INFO)
+
+        # Scheduler 인스턴스 생성 (이미 로깅 설정이 완료된 상태)
+        self.init_scheduler()
+
+        # 각 로거에 핸들러 추가 (Scheduler 생성 후)
         scheduler_logger = logging.getLogger('scheduler')
         scheduler_logger.handlers.clear()  # 기존 핸들러 모두 제거
         scheduler_logger.addHandler(self.gui_handler)
         scheduler_logger.setLevel(logging.INFO)
         scheduler_logger.propagate = False  # 상위 로거로 전파 방지
-        
+
         mysql_logger = logging.getLogger('mysql_connector')
         mysql_logger.handlers.clear()  # 기존 핸들러 모두 제거
         mysql_logger.addHandler(self.gui_handler)
         mysql_logger.setLevel(logging.INFO)
         mysql_logger.propagate = False  # 상위 로거로 전파 방지
-        
-        # 루트 로거도 GUI로 리다이렉트
-        root_logger = logging.getLogger()
-        root_logger.handlers.clear()
-        root_logger.addHandler(self.gui_handler)
-        root_logger.setLevel(logging.INFO)
-        
-        self.init_scheduler()
+
         self.scheduler.start()
-        
+
         # GUI 로그로 직접 출력 테스트
         logging.info('Start button clicked - Scheduler starting...')
 
@@ -208,25 +214,25 @@ class DBFCMSchedulerApp:
         self.start_button.config(state='normal')
         self.stop_button.config(state='disabled')
         self.connection_status.config(text="● Stopped", foreground='#ff0000')
-        
+
         # GUI 로그로 직접 출력
         logging.info('Stop button clicked - Scheduler stopping...')
-        
+
         # 스케줄러 중지
         if self.scheduler:
             self.scheduler.stop()
-        
+
         # 핸들러 제거
         if self.gui_handler:
             scheduler_logger = logging.getLogger('scheduler')
             scheduler_logger.removeHandler(self.gui_handler)
-            
+
             mysql_logger = logging.getLogger('mysql_connector')
             mysql_logger.removeHandler(self.gui_handler)
-            
+
             root_logger = logging.getLogger()
             root_logger.removeHandler(self.gui_handler)
-        
+
         self.destroy_scheduler()
 
 
