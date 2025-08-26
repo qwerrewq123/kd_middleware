@@ -52,11 +52,11 @@ class MySQLConnector:
                 result = cursor.fetchall()
                 return result
         except Exception as e:
-            logger.error(f"쿼리 실행 오류: {e}")
+            logger.error(f"execute query fail: {e}")
             return []
             
     def execute_update(self, query: str, params: Optional[tuple] = None) -> int:
-        """INSERT/UPDATE/DELETE 쿼리 실행"""
+        """INSERT/UPDATE/DELETE query execution"""
         if not self.connection:
             if not self.connect():
                 return 0
@@ -67,12 +67,12 @@ class MySQLConnector:
                 self.connection.commit()
                 return cursor.rowcount
         except Exception as e:
-            logger.error(f"업데이트 실행 오류: {e}")
+            logger.error(f"insert/update/delete query fail: {e}")
             self.connection.rollback()
             return 0
             
     def test_connection(self) -> bool:
-        """연결 테스트"""
+        """connection test"""
         try:
             result = self.execute_query("SELECT 1 as test")
             return len(result) > 0

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class Scheduler:
-    def __init__(self, interval: int = 3):
+    def __init__(self, interval: int = 1.5):
 
         with open("config.toml", 'r', encoding='utf-8') as f:
             config = toml.load(f)
@@ -32,9 +32,9 @@ class Scheduler:
         password=mysql_config['password']
         )
         if self.mysql_connector.test_connection():
-            print('MYSQL Connection Test Success')
+            logger.info('MYSQL Connection Test Success')
         else:
-            print('MYSQL Connection Test Failed')
+            logger.info('MYSQL Connection Test Fail')
         logger.info("MYSQL Connector Successful")
         self.push_sql: PushSql = PushSql()
         self.push_fcm: PushFcm = PushFcm()
@@ -43,9 +43,11 @@ class Scheduler:
 
         
     def job(self):
-        """실행할 작업"""
+        """Job to execute"""
         result = self.mysql_connector.execute_query(query=self.push_sql.select_query)[0]
         count = result['count(*)']
+        logger.info(f'count is {count}')
+        logger.info(f'interval is {self.interval}')
         if count :
             try:
                 self.mysql_connector.execute_update(query=self.push_sql.fcm_query)
@@ -53,21 +55,21 @@ class Scheduler:
                 fcm_list = [FcmDto(row['TOKEN'],row['TITLE'],row['CONTENT']) for row in rows]
                 self.push_fcm.push(fcm_list)
             except Exception as e:
-                logger.error(f"FCM 쿼리 실행 실패: {e}")
+                logger.error(f"Fcm Query Execution Fail: {e}")
                 if self.mysql_connector.connection:
                     self.mysql_connector.connection.rollback()
-                    logger.info("트랜잭션 롤백 완료")
+                    logger.info("Transaction Rollback")
 
     def run_continuously(self):
-        """백그라운드에서 스케줄 실행"""
+        """Schedule in Background"""
         while self.is_running:
             schedule.run_pending()
             time.sleep(1)
             
     def start(self):
-        """스케줄러 시작"""
+        """Start Scheduler"""
         if self.is_running:
-            logger.warning("스케줄러가 이미 실행 중입니다")
+            logger.warning("Scheduler already running")
             return
             
         schedule.every(self.interval).seconds.do(self.job)
@@ -77,27 +79,26 @@ class Scheduler:
         self.thread.daemon = True
         self.thread.start()
         
-        logger.info(f"스케줄러 시작 (간격: {self.interval}초)")
+        logger.info(f"Scheduler (interval: {self.interval}seconds)")
         
     def stop(self):
-        """스케줄러 중지"""
+        """Stop Scheduler"""
         self.is_running = False
         if self.thread:
             self.thread.join()
         schedule.clear()
-        logger.info("스케줄러 중지")
+        logger.info("Stop Scheduler")
 
     def run(self):
         logging.basicConfig(level=logging.INFO)
 
-        scheduler = Scheduler(interval=3)
-        scheduler.start()
+        self.start()
 
         try:
             # 계속 실행
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
-            scheduler.stop()
-            print("\n스케줄러 종료")
+            self.stop()
+            print("\nend Scheduler")
 
