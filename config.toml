@@ -1,6 +1,0 @@
-[database.mariadb]
-host = "kdnavien.iptime.org"
-port = 3336
-database = "simbiz"
-username = "root"
-password = "tlaqlwm2174"
