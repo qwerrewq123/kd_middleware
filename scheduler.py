@@ -16,8 +16,6 @@ logger = logging.getLogger(__name__)
 
 class Scheduler:
     def __init__(self, interval: int = 5):
-        # 로깅 설정을 생성자에서 수행
-        # 루트 로거의 핸들러 확인
         if not logging.getLogger().handlers:
             logging.basicConfig(level=logging.INFO)
             
@@ -48,31 +46,30 @@ class Scheduler:
         
     def job(self):
         """Job to execute"""
-        # 매 실행마다 최신 데이터를 확실히 읽기 위해 ping으로 연결 확인
-        if self.mysql_connector.connection:
-            self.mysql_connector.connection.ping(reconnect=True)
-        
-        result = self.mysql_connector.execute_query(query=self.push_sql.select_query)
-        idx_list = [res['idx'] for res in result]
-        count = len(idx_list)
-        logger.info(f'count is {count}')
-        logger.info(f'interval is {self.interval}')
-
-        if count > 0:
-            try:
-                self.mysql_connector.execute_update(query=self.push_sql.fcm_query)
-                rows = self.mysql_connector.execute_query(query=self.push_sql.fcm_select_query)
-                fcm_list = [FcmDto(row['TOKEN'],row['TITLE'],row['CONTENT']) for row in rows]
-                docno_list = [row['DOCNO'] for row in rows]
-                self.push_fcm.push(fcm_list)
-                for docno,idx in zip(docno_list,idx_list):
-                    self.mysql_connector.execute_update(self.push_sql.alarm_fcm_update_query, params=(docno,))
-                    self.mysql_connector.execute_update(self.push_sql.alarm_event_update_query, params=(idx,))
-            except Exception as e:
-                logger.error(f"Fcm Query Execution Fail: {e}")
-                if self.mysql_connector.connection:
-                    self.mysql_connector.connection.rollback()
-
+        try:
+            self.mysql_connector.start_transaction()
+            result = self.mysql_connector.execute_query(query=self.push_sql.select_query)
+            idx_list = [res['idx'] for res in result]
+            count = len(idx_list)
+            logger.info(f'count is {count}')
+            logger.info(f'interval is {self.interval}')
+            if count > 0:
+                try:
+                    self.mysql_connector.execute_update(query=self.push_sql.fcm_query)
+                    rows = self.mysql_connector.execute_query(query=self.push_sql.fcm_select_query)
+                    fcm_list = [FcmDto(row['TOKEN'], row['TITLE'], row['CONTENT']) for row in rows]
+                    docno_list = [row['DOCNO'] for row in rows]
+                    self.push_fcm.push(fcm_list)
+                    for docno, idx in zip(docno_list, idx_list):
+                        self.mysql_connector.execute_update(self.push_sql.alarm_fcm_update_query, params=(docno,))
+                        self.mysql_connector.execute_update(self.push_sql.alarm_event_update_query, params=(idx,))
+                except Exception as e:
+                    logger.error(f"Fcm Query Execution Fail: {e}")
+                    if self.mysql_connector.connection:
+                        self.mysql_connector.connection.rollback()
+            self.mysql_connector.commit()
+        except Exception as e:
+            self.mysql_connector.rollback()
 
     def run_continuously(self):
         """Schedule in Background"""
