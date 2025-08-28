@@ -8,6 +8,7 @@ from fcm_dto import FcmDto
 from push_fcm import PushFcm
 from push_sql import PushSql
 import toml
+from utils import get_resource_path
 
 from mysql_connector import MySQLConnector
 
@@ -19,9 +20,10 @@ class Scheduler:
         if not logging.getLogger().handlers:
             logging.basicConfig(level=logging.INFO)
             
-        with open("config.toml", 'r', encoding='utf-8') as f:
+        config_path = get_resource_path("config.toml")
+        with open(config_path, 'r', encoding='utf-8') as f:
             config = toml.load(f)
-            logger.info("Load config.toml file")
+            logger.info(f"Load config.toml file from {config_path}")
         mysql_config = config['database']['mariadb']
         self.interval = interval
         self.is_running = False

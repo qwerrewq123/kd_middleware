@@ -5,10 +5,11 @@ from firebase_admin import messaging
 from typing import List
 import logging
 from fcm_dto import FcmDto
+from utils import get_resource_path
 
 class PushFcm:
     def __init__(self):
-        self.path = os.path.join(os.getcwd(), 'simbizmall-5717f-firebase-adminsdk-45is2-597a4fbefc.json')
+        self.path = get_resource_path('simbizmall-5717f-firebase-adminsdk-45is2-597a4fbefc.json')
         
         # Firebase 초기화 (처음 호출시에만)
         if not firebase_admin._apps:
