@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class Scheduler:
-    def __init__(self, interval: int = 5):
+    def __init__(self, interval: int = 3):
         if not logging.getLogger().handlers:
             logging.basicConfig(level=logging.INFO)
             
@@ -59,7 +59,9 @@ class Scheduler:
 
         
     def job(self):
-        """Job to execute"""
+
+        self.mysql_connector.start_transaction()
+        self.mssql_connector.start_transaction()
         logger.info('check synchronization')
         sync_source_result = self.mssql_connector.execute_query(self.push_sql.alarm_event_synchronize_query_source)
         sync_target_result = self.mysql_connector.execute_query(self.push_sql.alarm_event_synchronize_query_target)
@@ -67,32 +69,36 @@ class Scheduler:
         target_cnt = len(sync_target_result)
         logger.info(f'source cnt is {source_cnt}')
         logger.info(f'target cnt is {target_cnt}')
+        self.mssql_connector.commit()
 
         if source_cnt > target_cnt:
             try:
-                logger.info(f'source cnt is more than target cnt(source_cnt = {source_cnt}, target_cnt = {target_cnt})')
+                logger.info(
+                    f'source cnt is more than target cnt(source_cnt = {source_cnt}, target_cnt = {target_cnt})')
                 logger.info('synchronization....')
                 result = get_sync_rows(sync_source_result, target_cnt)
                 result_tup = process_to_tuple(result)
-                self.mysql_connector.start_transaction()
                 for tup in result_tup:
                     self.mysql_connector.execute_update(self.push_sql.alarm_event_synchronize_insert_query, tup)
-                self.mysql_connector.commit()
+                    self.mysql_connector.commit()
+
             except Exception as e:
                 logger.error(f"Synchronization Query Execution Fail: {e}")
                 if self.mysql_connector.connection:
                     self.mysql_connector.connection.rollback()
 
-        time.sleep(0.5)
+
+        time.sleep(2)
         logger.info('check fcm')
+        self.mysql_connector.start_transaction()
         result = self.mysql_connector.execute_query(query=self.push_sql.select_query)
         idx_list = [res['idx'] for res in result]
         count = len(idx_list)
         logger.info(f'count is {count}')
         logger.info(f'interval is {self.interval}')
+
         if count > 0:
             try:
-                self.mysql_connector.start_transaction()
                 self.mysql_connector.execute_update(query=self.push_sql.fcm_query)
                 rows = self.mysql_connector.execute_query(query=self.push_sql.fcm_select_query)
                 fcm_list = [FcmDto(row['TOKEN'], row['TITLE'], row['CONTENT']) for row in rows]
@@ -102,10 +108,15 @@ class Scheduler:
                     self.mysql_connector.execute_update(self.push_sql.alarm_fcm_update_query, params=(docno,))
                     self.mysql_connector.execute_update(self.push_sql.alarm_event_update_query, params=(idx,))
                 self.mysql_connector.commit()
+
             except Exception as e:
                 logger.error(f"Fcm Query Execution Fail: {e}")
-                if self.mysql_connector.connection:
-                    self.mysql_connector.connection.rollback()
+                self.mysql_connector.rollback()
+
+
+
+
+
 
 
     def run_continuously(self):

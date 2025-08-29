@@ -23,7 +23,7 @@ class MSSQLConnector:
             user=self.username,
             database=self.database,
             password=self.password,
-            autocommit=True,
+            autocommit=False,
         )
         try:
             logger.info(f"MSSQL Connect Success: {self.host}:{self.port}/{self.database}")
@@ -60,4 +60,10 @@ class MSSQLConnector:
             return len(result) > 0
         except:
             return False
+    def start_transaction(self):
+        pass
+    def commit(self):
+        self.connection.commit()
+    def rollback(self):
+        self.connection.rollback()
 
