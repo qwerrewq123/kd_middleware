@@ -13,7 +13,6 @@ class MySQLConnector:
         self.username = username
         self.password = password
         self.connection = None
-        self.connect()
         
     def connect(self):
         try:
@@ -25,14 +24,12 @@ class MySQLConnector:
                 password=self.password,
                 charset='utf8mb4',
                 cursorclass=pymysql.cursors.DictCursor,
-                autocommit=False
+                autocommit=True
             )
             logger.info(f"MySQL Connect Success: {self.host}:{self.port}/{self.database}")
-            return True
         except Exception as e:
             logger.error(f"MySQL Connect Fail: {e}")
-            return False
-            
+
     def disconnect(self):
         """Disconnect MySQL"""
         if self.connection:
@@ -73,6 +70,9 @@ class MySQLConnector:
         self.connection.commit()
     def rollback(self):
         self.connection.rollback()
+    def start(self):
+        if self.connection is None:
+            self.connect()
 
             
     def test_connection(self) -> bool:

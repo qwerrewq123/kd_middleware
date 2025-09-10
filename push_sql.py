@@ -75,13 +75,4 @@ class PushSql:
         self.alarm_event_update_query = """
         update simbizlocal.alram_event set push_yn = 'Y' where idx = %s
         """
-        self.alarm_event_synchronize_query_source = """
-        select * from alarm_event
-        """
-        self.alarm_event_synchronize_query_target="""
-        select * from simbizlocal.alram_event
-        """
-        self.alarm_event_synchronize_insert_query = """
-        insert into simbizlocal.alram_event(START_TIME,END_TIME,STATION,TAG_NAME,TAG_DESC,ALARM_GROUP,ALARM_LEVEL,ALARM_VALUE,ALRAM_TP1_CD,ALRAM_TP1_NM,ALRAM_MEMO,UPDATE_USER,CHECK_YN,PUSH_YN,UPDATE_TIME)
-        values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        """
+

@@ -1,4 +1,3 @@
-import os
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import messaging
@@ -18,12 +17,12 @@ class PushFcm:
                 'databaseURL': 'https://simbizmall-5717f.firebaseio.com'
             })
 
-    def push(self, fcm_list: List[FcmDto]) -> bool:
+    def push(self, fcm_list: List[FcmDto]) -> List[int]:
         try:
+            ret_list = []
             success_count = 0
             fail_count = 0
-            
-            for fcm in fcm_list:
+            for idx,fcm in enumerate(fcm_list):
                 try:
                     # 데이터 페이로드 생성
                     data = {
@@ -64,18 +63,19 @@ class PushFcm:
                     response = messaging.send(message)
                     logging.info(f"Successfully sent message: {response}")
                     success_count += 1
+                    ret_list.append(idx)
                     
                 except Exception as e:
                     logging.info(f"Failed to send message to {fcm.token_id}: {e}")
                     fail_count += 1
             
             logging.info(f"Push completed - Success: {success_count}, Failed: {fail_count}")
-            return fail_count == 0
+            return ret_list
 
 
         except Exception as e:
             logging.info(f"Push error: {e}")
-            return False
+            return list()
 
 
 
