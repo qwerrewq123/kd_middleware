@@ -2,22 +2,25 @@ import schedule
 import time
 import logging
 import threading
+import os
+import sys
 from typing import Optional
-
-from fcm_dto import FcmDto
 from push_fcm import PushFcm
 from push_sql import PushSql
+from fcm_dto import FcmDto
 import toml
-from utils import get_resource_path,get_sync_rows,process_to_tuple
+from utils import get_resource_path,setup_logging
 
 from mysql_connector import MySQLConnector
+
+
+
 logger = logging.getLogger(__name__)
-
-
 class Scheduler:
     def __init__(self, interval: int = 5):
-        if not logging.getLogger().handlers:
-            logging.basicConfig(level=logging.INFO)
+        # 로깅 설정 (날짜별 디렉토리, 100MB 로테이션)
+        log_dir = setup_logging()
+        logger.info(f"Log directory: {log_dir}")
 
         config_path = get_resource_path("config.toml")
         with open(config_path, 'r', encoding='utf-8') as f:
@@ -34,9 +37,8 @@ class Scheduler:
             username=mysql_config['username'],
             password=mysql_config['password']
         )
-        self.push_sql: PushSql = PushSql()
-        self.push_fcm: PushFcm = PushFcm()
-
+        self.push_sql = PushSql()
+        self.push_fcm = PushFcm()
 
 
 
@@ -67,9 +69,6 @@ class Scheduler:
                     self.mysql_connector.execute_update(self.push_sql.alarm_fcm_update_query, params=(docno_list[idx],))
                 for idx in idx_list:
                     self.mysql_connector.execute_update(self.push_sql.alarm_event_update_query, params=(idx,))
-                # for docno, idx in zip(docno_list, idx_list):
-                #     self.mysql_connector.execute_update(self.push_sql.alarm_fcm_update_query, params=(docno,))
-                #     self.mysql_connector.execute_update(self.push_sql.alarm_event_update_query, params=(idx,))
             except Exception as e:
                 logger.error(f"Fcm Query Execution Fail: {e}")
         self.mysql_connector.disconnect()
@@ -110,8 +109,7 @@ class Scheduler:
         logger.info("Stop Scheduler")
 
     def run(self):
-        logging.basicConfig(level=logging.INFO)
-
+        # 로깅은 이미 __init__에서 설정됨
         self.start()
 
         try:
