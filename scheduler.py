@@ -2,8 +2,6 @@ import schedule
 import time
 import logging
 import threading
-import os
-import sys
 from typing import Optional
 from push_fcm import PushFcm
 from push_sql import PushSql

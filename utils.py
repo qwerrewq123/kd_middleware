@@ -133,8 +133,6 @@ def process_to_tuple(results):
 
 
 def setup_logging():
-    """날짜별 디렉토리에 100MB 단위로 로그 파일 생성 (날짜 자동 변경 지원)"""
-    # PyInstaller 실행 파일 위치 가져오기
     if getattr(sys, 'frozen', False):
         base_path = os.path.dirname(sys.executable)
     else:
